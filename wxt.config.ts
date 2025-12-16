@@ -17,6 +17,7 @@ export default defineConfig({
       '<all_urls>'
     ],
     action: {
+      default_popup: 'popup/index.html',
       default_title: 'Tab Memory Profiler',
     }
   }
