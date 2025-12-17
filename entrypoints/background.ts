@@ -17,7 +17,11 @@ export default defineBackground(() => {
             const tabs = await chrome.tabs.query({})
 
             for (const tab of tabs) {
-                if (!tab.id) continue;
+                if (!tab.id || !tab.url) continue;
+
+                if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
+                    continue; 
+                }
 
                 // Use chrome.system.memory as chrome.processes is not available in modern Extensions API
                 const memoryInfo = await chrome.system.memory.getInfo();
