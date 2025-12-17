@@ -1,3 +1,7 @@
+import { saveMemoryLeak } from '@/utils/storage';
+import type { MemoryLeak } from '@/types';
+import { notifyMemoryLeak } from '@/utils/notifications';
+
 export default defineBackground(() => {
     // Store memory snapshots for leak detection
     const memoryHistory: Map<number, number[]> = new Map();
@@ -42,6 +46,24 @@ export default defineBackground(() => {
                     const isGrowing = checkIfGrowing(history);
                     if (isGrowing) {
                         console.warn(`Potential memory leak detected in tab ${tab.id} (${tab.url}). Memory usage history:`, history);
+
+                        const firstValue = history[0];
+                        const lastValue = history[history.length - 1];
+                        const timeSpanMinutes = history.length * 0.5;
+                        const growthRate = (lastValue - firstValue) / timeSpanMinutes;
+
+                        const leak: MemoryLeak = {
+                            tabId: tab.id,
+                            title: tab.title || 'Untitled',
+                            url: tab.url,
+                            growthRate,
+                            memoryHistory: [...history],
+                            detectedAt: Date.now(),
+                            isConfirmed: true,
+                        };
+
+                        await saveMemoryLeak(leak);
+                        await notifyMemoryLeak(leak);
                     }
                 }
             }
