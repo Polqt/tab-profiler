@@ -31,7 +31,9 @@
     "vue-chartjs": "^5.3.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@types/chrome": "^0.1.32",
+    "@types/node": "^25.0.3",
     "@wxt-dev/module-vue": "^1.0.2",
     "typescript": "^5.9.2",
     "vue-tsc": "^3.0.6",
