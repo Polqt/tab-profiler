@@ -110,7 +110,11 @@ import { getIdleTabs, getTopMemoryConsumers } from '@/utils/tabGrouper';
     <div class="tab-list space-y-3">
         <div class="flex flex-col gap-2">
             <div class="relative">
-                
+                <input 
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="Search tabs by title, URL, or domain..."
+                />
             </div>
         </div>
     </div>
