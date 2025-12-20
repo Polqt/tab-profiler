@@ -1,22 +1,3 @@
-/**
- * useTabMemory Composable
- * 
- * This is a Vue composable - a reusable function that contains reactive logic.
- * Think of it like a React hook, but for Vue.
- * 
- * WHAT IT DOES:
- * - Fetches memory data for all tabs
- * - Provides reactive state (updates automatically)
- * - Handles refresh, close, and hibernate actions
- * - Auto-refreshes every 5 seconds
- * 
- * LEARNING NOTES:
- * - ref() creates reactive variables
- * - onMounted() runs when component loads
- * - onUnmounted() runs when component is destroyed (cleanup)
- * - We return an object with everything the component needs
- */
-
 import type { TabMemoryInfo } from "@/types";
 import { getAllTabsMemory } from "@/utils/memoryCalculator";
 
