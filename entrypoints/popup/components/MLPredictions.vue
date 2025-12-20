@@ -57,26 +57,27 @@ import { ref, watch } from 'vue';
 
 <template>
     <div class="ml-predictions space-y-3">
-        <div class="flex items-center justify-center">
-            <h3 class="font-semibold text-gray-800">AI Suggestions</h3>
-            <p class="text-xs text-gray-500">Based on your usage patterns</p>
-        </div>
-        <button
-            @click="generatePredictions"
-            :disabled="loading"
-            class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
-        >
-            <svg 
-                class="w-5 h-5" 
-                :class="{ 'animate-spin': loading }"
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="font-semibold text-gray-800">AI Suggestions</h3>
+                <p class="text-xs text-gray-500">Based on your usage patterns</p>
+            </div>
+            <button
+                @click="generatePredictions"
+                :disabled="loading"
+                class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
             >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-            </svg>
-        </button>
-    </div>
+                <svg 
+                    class="w-5 h-5" 
+                    :class="{ 'animate-spin': loading }"
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+            </button>
+        </div>
     
     <div v-if="loading" class="flex items-center justify-center py-8">
         <div class="flex items-center gap-2 text-gray-400">
@@ -111,12 +112,12 @@ import { ref, watch } from 'vue';
                             <p class="text-sm font-medium text-gray-900 truncate">{{ pred.title }}</p>
                             <p class="text-xs text-gray-500 mt-1">{{ pred.reasoning }}</p>
                         </div>
-                        <div class="flex shrink-0 text-right">
+                        <div class="shrink-0 text-right">
                             <span
                                 class="inline-block px-2 py-0.5 text-xs font-medium rounded-full"
                                 :class="getConfidenceColor(pred.confidence)"
                             >
-                                {{ (pred.probability * 100).toFixed(0) }} %
+                                {{ (pred.probability * 100).toFixed(0) }}%
                             </span>
                         </div>
                     </div>
@@ -149,25 +150,25 @@ import { ref, watch } from 'vue';
                             <p class="text-sm font-medium text-gray-900 truncate">{{ pred.title }}</p>
                             <p class="text-xs text-gray-500 mt-1">{{ pred.reasoning }}</p>
                         </div>
-                        <div class="flex shrink-0 text-right">
+                        <div class="shrink-0 text-right">
                             <span
                                 class="inline-block px-2 py-0.5 text-xs font-medium rounded-full"
                                 :class="getConfidenceColor(pred.confidence)"
                             >
-                                {{ (pred.probability * 100).toFixed(0) }} %
+                                {{ (pred.probability * 100).toFixed(0) }}%
                             </span>
                         </div>
                     </div>
                     <div class="mt-2 flex gap-2">
                         <button
                             @click="emit('hibernate', pred.tabId)"
-                            class="flex-1 px-2 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded hover:bg-blue-200 transition colors"
+                            class="flex-1 px-2 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
                         >
                             Hibernate
                         </button>
                         <button
                             @click="emit('close', pred.tabId)"
-                            class="flex-1 px-2 py-1 text-xs font-medium text-red-600 bg-red-100 rounded hover:bg-red-200 transition colors"
+                            class="flex-1 px-2 py-1 text-xs font-medium text-red-600 bg-red-100 rounded hover:bg-red-200 transition-colors"
                         >
                             Close
                         </button>
@@ -183,5 +184,6 @@ import { ref, watch } from 'vue';
         </svg>
         <p class="text-gray-500 font-medium">Not enough data yet</p>
         <p class="text-xs text-gray-400 mt-1">Use tabs normally to train the AI</p>
+    </div>
     </div>
 </template>

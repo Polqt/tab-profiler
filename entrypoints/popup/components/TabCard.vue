@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { TabMemoryInfo } from '@/types';
 import { calculateHealthScore, formatMemory } from '@/utils/memoryCalculator';
 
@@ -56,14 +57,14 @@ import { calculateHealthScore, formatMemory } from '@/utils/memoryCalculator';
   <div 
     class="bg-white rounded-lg border p-3 hover:shadow-md transition-all cursor-pointer"
     :class="{
-      'border-red-300 b-red-50' : isLeaking,
+      'border-red-300 bg-red-50' : isLeaking,
       'border-gray-200' : !isLeaking,
       'opacity-60' : isHibernated
     }"
     @click="switchToTab"
   >
     <div class="flex items-start gap-3">
-      <div class="flex-shrink-0 w-8 h-8 rounded overflow-hidden bg-gray-100 flex items-center justify-center">
+      <div class="shrink-0 w-8 h-8 rounded overflow-hidden bg-gray-100 flex items-center justify-center">
         <img 
           v-if="tab.favicon"
           :src="tab.favicon"
@@ -85,7 +86,7 @@ import { calculateHealthScore, formatMemory } from '@/utils/memoryCalculator';
         </p>
       </div>
 
-      <div class="flex-shrink-0 text-right">
+      <div class="shrink-0 text-right">
         <p class="text-sm font-bold" :class="memoryColorClass">
           {{ formattedMemory }}
         </p>

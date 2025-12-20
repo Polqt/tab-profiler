@@ -40,8 +40,9 @@ export async function notifyMemoryLeak(leak: MemoryLeak): Promise<void> {
     }
 
     await showNotification(
-        'High Memory Usage Detected',
-        `"${leak.title}" is consumin ${leak.memoryHistory[leak.memoryHistory.length - 1].toFixed(1)} MB and growing.`
+        '⚠️ Memory Leak Detected',
+        `"${leak.title}" is consuming ${leak.memoryHistory[leak.memoryHistory.length - 1].toFixed(1)} MB and growing.`,
+        2
     )
 }
 

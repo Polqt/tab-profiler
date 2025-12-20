@@ -11,6 +11,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { DomainGroup } from '@/types';
 import { Bar } from 'vue-chartjs';
 import {

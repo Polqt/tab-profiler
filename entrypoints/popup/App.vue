@@ -15,6 +15,7 @@
 -->
 
 <script lang="ts" setup>
+import { ref, computed, onMounted } from 'vue';
 import { useTabMemory } from '@/composables/useTabMemory';
 import { groupTabsByDomain } from '@/utils/tabGrouper';
 import TabList from './components/TabList.vue';
@@ -45,7 +46,7 @@ const domainGroups = computed(() => {
 async function loadLeaks() {
   try {
     const data = await chrome.storage.local.get('memoryLeaks');
-    leaks.value = data.memoryLeaks || [];
+    leaks.value = (data.memoryLeaks as any[] | undefined) || [];
   } catch (e) {
     console.error('Error loading leaks:', e);
   }
@@ -58,7 +59,7 @@ onMounted(() => {
   // Listen for storage changes
   chrome.storage.onChanged.addListener((changes) => {
     if (changes.memoryLeaks) {
-      leaks.value = changes.memoryLeaks.newValue || [];
+      leaks.value = (changes.memoryLeaks.newValue as any[] | undefined) || [];
     }
   });
 });
@@ -67,10 +68,10 @@ onMounted(() => {
 <template>
   <div class="w-[420px] min-h-[500px] max-h-[600px] flex flex-col bg-gray-50">
     <!-- Header -->
-    <header class="flex-shrink-0 px-4 py-3 bg-white border-b border-gray-200 shadow-sm">
+    <header class="shrink-0 px-4 py-3 bg-white border-b border-gray-200 shadow-sm">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+          <div class="w-8 h-8 bg-linear-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
             </svg>
@@ -103,7 +104,7 @@ onMounted(() => {
     </header>
     
     <!-- Tab Navigation -->
-    <nav class="flex-shrink-0 flex bg-white border-b border-gray-200">
+    <nav class="shrink-0 flex bg-white border-b border-gray-200">
       <button
         v-for="tab in [
           { id: 'tabs', label: 'Tabs', icon: 'M4 6h16M4 12h16M4 18h7' },
@@ -203,7 +204,7 @@ onMounted(() => {
     </main>
     
     <!-- Footer -->
-    <footer class="flex-shrink-0 px-4 py-2 bg-white border-t border-gray-200 text-center">
+    <footer class="shrink-0 px-4 py-2 bg-white border-t border-gray-200 text-center">
       <p class="text-xs text-gray-400">
         Tab Memory Profiler • Made with ❤️
       </p>

@@ -41,8 +41,43 @@ export class TabUsagePredictor {
 
         const predictions: MLPrediction[] = tabs.map(tab => {
             const recencyScore = this.calculateRecencyScore(tab, now);
+            const frequencyScore = this.calculateFrequencyScore(tab.domain);
+            const timePatternScore = this.calculateTimePatternScore(tab.domain, currentHour);
+            const dayPatternScore = this.calculateDayPatternScore(tab.domain, currentDay);
 
-        })
+            // Weighted average
+            const probability = 
+                (recencyScore * this.WEIGHTS.recency) +
+                (frequencyScore * this.WEIGHTS.frequency) +
+                (timePatternScore * this.WEIGHTS.timePattern) +
+                (dayPatternScore * this.WEIGHTS.dayPattern);
+
+            // Determine confidence
+            let confidence: 'high' | 'medium' | 'low';
+            if (probability > 0.7) confidence = 'high';
+            else if (probability > 0.4) confidence = 'medium';
+            else confidence = 'low';
+
+            // Generate reasoning
+            const reasoning = this.generateReasoning(
+                tab, 
+                recencyScore, 
+                frequencyScore, 
+                timePatternScore,
+                dayPatternScore
+            );
+
+            return {
+                tabId: tab.tabId,
+                title: tab.title,
+                probability,
+                suggestKeep: probability > 0.5,
+                reasoning,
+                confidence
+            };
+        });
+
+        return predictions;
     }
 
     private calculateRecencyScore(tab: TabMemoryInfo, now: number): number {
@@ -87,6 +122,60 @@ export class TabUsagePredictor {
         const timeMatchRatio = nearbyHourPatterns.length / domainPatterns.length;
 
         return Math.min(1, timeMatchRatio * 2);
+    }
+
+    private calculateDayPatternScore(domain: string, currentDay: number): number {
+        const domainPatterns = this._patterns.filter(p => p.domain === domain);
+
+        if (domainPatterns.length < 5) return 0.5;
+
+        // Count visits on the same day of week
+        const sameDayPatterns = domainPatterns.filter(p => p.daysOfWeek === currentDay);
+
+        const dayMatchRatio = sameDayPatterns.length / domainPatterns.length;
+
+        return Math.min(1, dayMatchRatio * 2);
+    }
+
+    private generateReasoning(
+        tab: TabMemoryInfo,
+        recencyScore: number,
+        frequencyScore: number,
+        timeScore: number,
+        dayScore: number
+    ): string {
+        const reasons: string[] = [];
+
+        // Check recency
+        const hoursSinceAccess = (Date.now() - tab.lastAccessed) / (1000 * 60 * 60);
+        
+        if (tab.isActive) {
+            reasons.push("Currently active");
+        } else if (hoursSinceAccess < 1) {
+            reasons.push("Used very recently");
+        } else if (hoursSinceAccess > 24) {
+            reasons.push("Not used in over 24 hours");
+        }
+
+        // Check frequency
+        if (frequencyScore > 0.7) {
+            reasons.push("Frequently visited site");
+        } else if (frequencyScore < 0.3) {
+            reasons.push("Rarely visited");
+        }
+
+        // Check time pattern
+        if (timeScore > 0.7) {
+            reasons.push("Usually accessed at this time");
+        }
+
+        // Check day pattern
+        if (dayScore > 0.7) {
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            reasons.push(`Often used on ${days[new Date().getDay()]}`);
+        }
+
+        return reasons.length > 0 ? reasons.join('. ') + '.' : 'No clear pattern yet.';
     }
 }
 
