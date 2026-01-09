@@ -15,6 +15,7 @@ export function getDomain(url: string): string {
 export function estimateMemoryFromTab(tab: chrome.tabs.Tab): number {
     let estimate = 50;
 
+
     const url = tab.url || '';
 
     const heavySites = ['youtube.com', 'netflix.com', 'twitch.tv', 'kick.com'];
@@ -116,7 +117,7 @@ export function calculateHealthScore(tab: TabMemoryInfo): number {
 
     // Penalty for olt abs
     // Tabs not accessed in the last hour lose points
-    const hoursSinceAccess = (Date.now() - tab.lastAccessed) / (1000 * 60 * 50)
+    const hoursSinceAccess = (Date.now() - tab.lastAccessed) / (1000 * 60 * 60)
 
     if (hoursSinceAccess > 1) {
         const timePenalty = Math.floor(hoursSinceAccess) * 5;

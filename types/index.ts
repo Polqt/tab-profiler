@@ -82,7 +82,7 @@ export interface QuickAction {
 export interface TabFilter {
     domain?: string;
     olderThanMinutes?: number;
-    memoryAboceMB?: number;
+    memoryAboveMB?: number;
     excludeActive?: boolean;
     excludePinned?: boolean;
 }

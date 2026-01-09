@@ -88,7 +88,7 @@ export async function deleteSession(sessionId: string): Promise<void> {
 export async function updateSession(session: TabSession): Promise<void> {
     const sessions = await getSessions();
     const index = sessions.findIndex(s => s.id === session.id);
-    if (index !== - 1) {
+    if (index !== -1) {
         sessions[index] = session;
         await setStorage(KEYS.SESSIONS, sessions);
     }
