@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MLPrediction, TabMemoryInfo } from '@/types';
+import type { MLPrediction, TabMemoryInfo } from '@/types';
 import { tabPredictor } from '@/utils/mlModel';
 import { ref, watch } from 'vue';
 

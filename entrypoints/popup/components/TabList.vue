@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { MemoryLeak, TabMemoryInfo } from '@/types';
+import type { MemoryLeak, TabMemoryInfo } from '@/types';
 import { getIdleTabs, getTopMemoryConsumers } from '@/utils/tabGrouper';
 import TabCard from './TabCard.vue';
 

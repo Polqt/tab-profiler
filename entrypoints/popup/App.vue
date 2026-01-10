@@ -1,23 +1,9 @@
-<!--
-  App.vue - Main Application Component
-  
-  This is the root component that assembles everything.
-  
-  STRUCTURE:
-  - Header with app name and total memory
-  - Tab navigation (Tabs / Charts / AI Suggestions)
-  - Content area with the selected view
-  
-  LEARNING NOTES:
-  - This is the "parent" component that holds state
-  - Child components emit events, parent handles them
-  - We use a composable (useTabMemory) for shared logic
--->
-
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useTabMemory } from '@/composables/useTabMemory';
 import { groupTabsByDomain } from '@/utils/tabGrouper';
+import { formatMemory } from '@/utils/memoryCalculator';
+import type { MemoryLeak } from '@/types';
 import TabList from './components/TabList.vue';
 import MemoryChart from './components/MemoryChart.vue';
 import MLPredictions from './components/MLPredictions.vue';
@@ -35,7 +21,7 @@ const {
 
 // Local state
 const activeTab = ref<'tabs' | 'charts' | 'ai'>('tabs');
-const leaks = ref<any[]>([]);
+const leaks = ref<MemoryLeak[]>([]);
 
 // Computed: Domain groups for chart
 const domainGroups = computed(() => {
@@ -52,16 +38,24 @@ async function loadLeaks() {
   }
 }
 
+// Storage change listener
+const storageListener = (changes: { [key: string]: chrome.storage.StorageChange }) => {
+  if (changes.memoryLeaks) {
+    leaks.value = (changes.memoryLeaks.newValue as MemoryLeak[] | undefined) || [];
+  }
+};
+
 // Lifecycle
 onMounted(() => {
   loadLeaks();
   
   // Listen for storage changes
-  chrome.storage.onChanged.addListener((changes) => {
-    if (changes.memoryLeaks) {
-      leaks.value = (changes.memoryLeaks.newValue as any[] | undefined) || [];
-    }
-  });
+  chrome.storage.onChanged.addListener(storageListener);
+});
+
+// Cleanup listener on unmount to prevent memory leaks
+onUnmounted(() => {
+  chrome.storage.onChanged.removeListener(storageListener);
 });
 </script>
 
@@ -212,15 +206,6 @@ onMounted(() => {
   </div>
 </template>
 
-<script lang="ts">
-// Helper function (outside setup)
-function formatMemory(mb: number): string {
-  if (mb >= 1024) {
-    return `${(mb / 1024).toFixed(1)} GB`;
-  }
-  return `${Math.round(mb)} MB`;
-}
-</script>
 
 <style scoped>
 /* Custom scrollbar */

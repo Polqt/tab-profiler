@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { DomainGroup } from '@/types';
+import type { DomainGroup } from '@/types';
 import { Bar } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -63,7 +63,7 @@ const chartData = computed(() => {
     }
 });
 
-const chartOptions = computed(() => ({
+const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -72,12 +72,13 @@ const chartOptions = computed(() => ({
         },
         tooltip: {
             callbacks: {
-                label: (context: any) => {
+                label: (context: { dataIndex: number }) => {
                     const domain = props.domainGroups[context.dataIndex];
+                    if (!domain) return [];
                     return [
                         `Memory: ${Math.round(domain.totalMemoryUsageMB)} MB`,
                         `Tabs: ${domain.tabCount}`,
-                    ]
+                    ];
                 }
             }
         }
@@ -97,6 +98,6 @@ const chartOptions = computed(() => ({
             }
         }
     }
-}));
+};
 </script>
 

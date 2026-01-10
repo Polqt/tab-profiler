@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { TabMemoryInfo } from '@/types';
+import type { TabMemoryInfo } from '@/types';
 import { calculateHealthScore, formatMemory } from '@/utils/memoryCalculator';
 
+interface Props {
+  tab: TabMemoryInfo;
+  isLeaking?: boolean;
+  isHibernated?: boolean;
+}
 
-  interface Props {
-    tab: TabMemoryInfo;
-    isLeaking?: boolean;
-    isHibernated?: boolean;
-  }
-
-  const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  isLeaking: false,
+  isHibernated: false,
+});
 
   const emit = defineEmits<{
     close: [tabId: number];
