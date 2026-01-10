@@ -1,6 +1,7 @@
 import type { TabMemoryInfo } from '@/types';
 import { getAllTabsMemory } from '@/utils/memoryCalculator';
 import { UI_CONFIG } from '@/constants/config';
+import { useDocumentVisibility, useIntervalFn } from '@vueuse/core';
 
 export function useTabMemory() {
   // Reactive state
@@ -9,8 +10,8 @@ export function useTabMemory() {
   const error = ref<string | null>(null);
   const totalMemory = ref(0);
 
-  // Interval ID for cleanup
-  let intervalId: ReturnType<typeof setInterval> | null = null;
+  // Document visibility for smart refresh
+  const visibility = useDocumentVisibility();
 
   /**
    * Fetch fresh memory data for all tabs
@@ -52,8 +53,6 @@ export function useTabMemory() {
    * chrome.tabs.discard() unloads the tab from memory
    * but keeps it in the tab bar. When user clicks it,
    * it reloads automatically.
-   *
-   * Note: Cannot discard the active tab!
    */
   async function hibernateTab(tabId: number) {
     try {
@@ -95,22 +94,30 @@ export function useTabMemory() {
     }
   }
 
+  // Smart refresh: only refresh when popup is visible
+  // This saves resources when the popup is closed
+  const { pause, resume } = useIntervalFn(
+    () => {
+      if (visibility.value === 'visible') {
+        refreshMemory();
+      }
+    },
+    UI_CONFIG.REFRESH_INTERVAL_MS,
+    { immediate: false }
+  );
+
   // Setup: Run when component mounts
   onMounted(() => {
     // Initial data fetch
     refreshMemory();
 
-    // Set up auto-refresh
-    intervalId = setInterval(refreshMemory, UI_CONFIG.REFRESH_INTERVAL_MS);
+    // Start the smart refresh interval
+    resume();
   });
 
-  // Cleanup: Run when component unmounts
   onUnmounted(() => {
-    // Clear the interval to prevent memory leaks
-    if (intervalId) {
-      clearInterval(intervalId);
-      intervalId = null;
-    }
+    // Pause the interval to prevent memory leaks
+    pause();
   });
 
   // Return everything the component needs

@@ -72,37 +72,45 @@ async function getProcessMemory(tabId: number): Promise<number | null> {
   }
 }
 
+/**
+ * Creates TabMemoryInfo for a single tab
+ */
+async function createTabMemoryInfo(tab: chrome.tabs.Tab): Promise<TabMemoryInfo | null> {
+  if (!tab.id) return null;
+
+  let memoryMB = await getProcessMemory(tab.id);
+
+  if (memoryMB === null) {
+    memoryMB = estimateMemoryFromTab(tab);
+  }
+
+  return {
+    tabId: tab.id,
+    title: tab.title || 'Untitled',
+    url: tab.url || '',
+    favicon: tab.favIconUrl,
+    domain: getDomain(tab.url || ''),
+    memoryUsageMB: memoryMB,
+    cpuUsage: 0,
+    lastAccessed: tab.lastAccessed || Date.now(),
+    isActive: tab.active || false,
+    isDiscarded: tab.discarded || false,
+  };
+}
+
+/**
+ * Fetches memory info for all tabs in parallel for better performance
+ */
 export async function getAllTabsMemory(): Promise<TabMemoryInfo[]> {
   const tabs = await chrome.tabs.query({});
 
-  const results: TabMemoryInfo[] = [];
+  // Process all tabs in parallel instead of sequentially
+  const results = await Promise.all(tabs.map((tab) => createTabMemoryInfo(tab)));
 
-  for (const tab of tabs) {
-    if (!tab.id) continue;
-
-    let memoryMB = await getProcessMemory(tab.id);
-
-    if (memoryMB === null) {
-      memoryMB = estimateMemoryFromTab(tab);
-    }
-
-    const tabInfo: TabMemoryInfo = {
-      tabId: tab.id,
-      title: tab.title || 'Untitled',
-      url: tab.url || '',
-      favicon: tab.favIconUrl,
-      domain: getDomain(tab.url || ''),
-      memoryUsageMB: memoryMB,
-      cpuUsage: 0,
-      lastAccessed: tab.lastAccessed || Date.now(),
-      isActive: tab.active || false,
-    };
-    results.push(tabInfo);
-  }
-
-  results.sort((a, b) => b.memoryUsageMB - a.memoryUsageMB);
-
-  return results;
+  // Filter out null results and sort by memory usage
+  return results
+    .filter((tab): tab is TabMemoryInfo => tab !== null)
+    .sort((a, b) => b.memoryUsageMB - a.memoryUsageMB);
 }
 
 export function calculateHealthScore(tab: TabMemoryInfo): number {

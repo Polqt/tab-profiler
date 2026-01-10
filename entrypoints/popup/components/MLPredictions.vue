@@ -1,27 +1,32 @@
 <script setup lang="ts">
 import type { MLPrediction, TabMemoryInfo } from '@/types';
 import { tabPredictor } from '@/utils/mlModel';
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
+import { watchDebounced } from '@vueuse/core';
 
+interface Props {
+  tabs: TabMemoryInfo[];
+}
 
-    interface Props {
-        tabs: TabMemoryInfo[];
-    }
+const props = defineProps<Props>();
 
-    const props = defineProps<Props>();
+const emit = defineEmits<{
+  close: [tabId: number];
+  hibernate: [tabId: number];
+}>();
 
-    const emit = defineEmits<{
-        close: [tabId: number];
-        hibernate: [tabId: number];
-    }>();
+const predictions = ref<MLPrediction[]>([]);
+const loading = ref(false);
+const error = ref<string | null>(null);
 
-    const predictions = ref<MLPrediction[]>([]);
-    const loading = ref(false);
-    const error = ref<string | null>(null);
-
-    watch(() => props.tabs, async () => {
-        await generatePredictions();
-    }, { immediate: true });
+// Debounce predictions to avoid excessive recalculations when tabs change rapidly
+watchDebounced(
+  () => props.tabs,
+  async () => {
+    await generatePredictions();
+  },
+  { debounce: 300, immediate: true }
+);
 
     async function generatePredictions() {
         loading.value = true;

@@ -2,109 +2,114 @@
 import { ref, computed } from 'vue';
 import type { MemoryLeak, TabMemoryInfo } from '@/types';
 import { getIdleTabs, getTopMemoryConsumers } from '@/utils/tabGrouper';
+import { useVirtualList } from '@vueuse/core';
+import { UI_CONFIG } from '@/constants/config';
 import TabCard from './TabCard.vue';
 
+interface Props {
+  tabs: TabMemoryInfo[];
+  leaks: MemoryLeak[];
+}
 
-    interface Props {
-        tabs: TabMemoryInfo[];
-        leaks: MemoryLeak[];
+const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  close: [tabId: number];
+  hibernate: [tabId: number];
+  refresh: [];
+}>();
+
+const searchQuery = ref('');
+const sortBy = ref<'memory' | 'name' | 'lastAccessed'>('memory');
+const sortDescending = ref(true);
+const viewMode = ref<'all' | 'idle' | 'heavy'>('all');
+
+const filteredTabs = computed(() => {
+  let result = [...props.tabs];
+
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase();
+    result = result.filter(
+      (tab) =>
+        tab.title.toLowerCase().includes(query) ||
+        tab.url.toLowerCase().includes(query) ||
+        tab.domain.toLowerCase().includes(query)
+    );
+  }
+
+  if (viewMode.value === 'idle') {
+    result = getIdleTabs(result, UI_CONFIG.DEFAULT_IDLE_MINUTES);
+  } else if (viewMode.value === 'heavy') {
+    result = getTopMemoryConsumers(result, UI_CONFIG.TOP_MEMORY_CONSUMERS_COUNT);
+  }
+
+  return result;
+});
+
+const sortedTabs = computed(() => {
+  const tabs = [...filteredTabs.value];
+
+  tabs.sort((a, b) => {
+    let comparison = 0;
+
+    switch (sortBy.value) {
+      case 'memory':
+        comparison = a.memoryUsageMB - b.memoryUsageMB;
+        break;
+      case 'name':
+        comparison = a.title.localeCompare(b.title);
+        break;
+      case 'lastAccessed':
+        comparison = a.lastAccessed - b.lastAccessed;
+        break;
+      default:
+        break;
     }
+    return sortDescending.value ? -comparison : comparison;
+  });
+  return tabs;
+});
 
-    const props = defineProps<Props>();
+// Virtual list for performance with many tabs
+const { list: virtualTabs, containerProps, wrapperProps } = useVirtualList(sortedTabs, {
+  itemHeight: 120, // Approximate height of TabCard
+  overscan: 3, // Render 3 extra items above/below viewport
+});
 
-    const emit = defineEmits<{
-        close: [tabId: number];
-        hibernate: [tabId: number];
-        refresh: [];
-    }>();
+const leakingTabIds = computed(() => {
+  return new Set(props.leaks.map((leak) => leak.tabId));
+});
 
-    const searchQuery = ref('');
+const summary = computed(() => {
+  const total = props.tabs.length;
+  const filtered = sortedTabs.value.length;
+  const idle = getIdleTabs(props.tabs, UI_CONFIG.DEFAULT_IDLE_MINUTES).length;
+  const heavy = props.tabs.filter((t) => t.memoryUsageMB > 200).length;
 
-    const sortBy = ref<'memory' | 'name' | 'lastAccessed'>('memory');
+  return { total, filtered, idle, heavy };
+});
 
-    const sortDescending = ref(true);
+function handleSort(field: 'memory' | 'name' | 'lastAccessed') {
+  if (sortBy.value === field) {
+    sortDescending.value = !sortDescending.value;
+  } else {
+    sortBy.value = field;
+    sortDescending.value = field === 'memory' || field === 'lastAccessed';
+  }
+}
 
-    const viewMode = ref<'all' | 'idle' | 'heavy'>('all');
+function isLeaking(tabId: number): boolean {
+  return leakingTabIds.value.has(tabId);
+}
 
-    const filteredTabs = computed(() => {
-        let result = [...props.tabs];
-
-        if (searchQuery.value.trim()) {
-            const query = searchQuery.value.toLowerCase();
-            result = result.filter(tab => 
-                tab.title.toLowerCase().includes(query) ||
-                tab.url.toLowerCase().includes(query) ||
-                tab.domain.toLowerCase().includes(query)
-            )
-        }
-
-        if (viewMode.value === 'idle') {
-            result = getIdleTabs(result, 30);
-        } else if (viewMode.value === 'heavy') {
-            result = getTopMemoryConsumers(result, 10);
-        }
-
-        return result
-    });
-
-    const sortedTabs = computed(() => {
-        const tabs = [...filteredTabs.value];
-
-        tabs.sort((a, b) => {
-            let comparison = 0;
-            
-            switch (sortBy.value) {
-                case 'memory':
-                    comparison = a.memoryUsageMB - b.memoryUsageMB;
-                    break;
-                case 'name':
-                    comparison = a.title.localeCompare(b.title);
-                    break;
-                case 'lastAccessed':
-                    comparison = a.lastAccessed - b.lastAccessed;
-                    break;
-                default:
-                    break;
-            }
-            return sortDescending.value ? -comparison : comparison;
-        })
-        return tabs;
-    })
-
-    const leakingTabIds = computed(() => {
-        return new Set(props.leaks.map(leak => leak.tabId));
-    })
-
-    const summary = computed(() => {
-        const total = props.tabs.length;
-        const filtered = sortedTabs.value.length;
-        const idle = getIdleTabs(props.tabs, 30).length;
-        const heavy = props.tabs.filter(t => t.memoryUsageMB > 200).length;
-
-        return { total, filtered, idle, heavy}
-    })
-
-    function handleSort(field: 'memory' | 'name' | 'lastAccessed') {
-        if (sortBy.value === field) {
-            sortDescending.value = !sortDescending.value;
-        } else {
-            sortBy.value = field;
-            sortDescending.value = field === 'memory' || field === 'lastAccessed';
-        }
+async function hibernateAllIdle() {
+  const idleTabs = getIdleTabs(props.tabs, UI_CONFIG.DEFAULT_IDLE_MINUTES);
+  for (const tab of idleTabs) {
+    if (!tab.isActive) {
+      emit('hibernate', tab.tabId);
     }
-
-    function isLeaking(tabId: number): boolean {
-        return leakingTabIds.value.has(tabId);
-    }
-
-    async function hibernateAllIdle() {
-        const idleTabs = getIdleTabs(props.tabs, 30);
-        for (const tab of idleTabs) {
-            if (!tab.isActive) {
-                emit('hibernate', tab.tabId);
-            }
-        }
-    }
+  }
+}
 </script>
 
 
@@ -177,16 +182,23 @@ import TabCard from './TabCard.vue';
             Showing {{ sortedTabs.length }} of {{ summary.total }} tabs
         </div>
 
-        <div v-if="sortedTabs.length" class="space-y-2">
-            <TabCard 
-                v-for="tab in sortedTabs"
-                :key="tab.tabId"
-                :tab="tab"
-                :is-leaking="isLeaking(tab.tabId)"
-                :is-hibernated="tab.isDiscarded"
-                @close="emit('close', $event)"
-                @hibernate="emit('hibernate', $event)"
-            />
+        <!-- Virtual scrolling container for performance with many tabs -->
+        <div
+            v-if="sortedTabs.length"
+            v-bind="containerProps"
+            class="max-h-[300px] overflow-y-auto"
+        >
+            <div v-bind="wrapperProps" class="space-y-2">
+                <TabCard
+                    v-for="{ data: tab, index } in virtualTabs"
+                    :key="tab.tabId"
+                    :tab="tab"
+                    :is-leaking="isLeaking(tab.tabId)"
+                    :is-hibernated="tab.isDiscarded"
+                    @close="emit('close', $event)"
+                    @hibernate="emit('hibernate', $event)"
+                />
+            </div>
         </div>
 
         <div v-else class="text-center py-8">
